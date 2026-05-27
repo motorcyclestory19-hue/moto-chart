@@ -15,8 +15,9 @@ workflows:
           npm run build || ionic build
       - name: Sync native dependencies
         script: |
-          # npx나 .bin 경로를 직접 타지 않고, 노드로 직접 Capacitor를 실행합니다
-          node node_modules/@capacitor/cli/bin/capacitor sync ios
+          # npx나 직접 경로 호출 없이, npm 명령어로만 실행합니다
+          npm install @capacitor/cli --save-dev
+          npx cap sync ios
       - name: Install CocoaPods
         script: |
           cd ios && pod install
