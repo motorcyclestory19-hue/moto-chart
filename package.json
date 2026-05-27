@@ -1,0 +1,7 @@
+{
+  "name": "moto-chart",
+  "version": "1.0.0",
+  "scripts": {
+    "build": "echo 'Build skipped: No build script needed'"
+  }
+}
