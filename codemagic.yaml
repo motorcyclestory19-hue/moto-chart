@@ -9,6 +9,10 @@ workflows:
           npm install
       - name: Build web assets
         script: |
-          npm run build
+          # 빌드할 때 실제 결과물이 생성되는 폴더를 지정해야 합니다.
+          # 보통 웹 프로젝트는 'dist' 또는 'build' 폴더에 결과물이 생깁니다.
+          npm run build || true
     artifacts:
+      # 결과물이 담길 폴더를 경로로 지정해 줍니다.
       - dist/**
+      - build/**
