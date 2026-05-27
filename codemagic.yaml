@@ -10,6 +10,7 @@ workflows:
       - name: Install dependencies
         script: |
           npm install
+          npm run build
           chmod +x node_modules/.bin/cap
           npx cap sync ios
       - name: CocoaPods
