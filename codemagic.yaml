@@ -4,15 +4,9 @@ workflows:
     instance_type: mac_mini_m1
     max_build_duration: 60
     scripts:
-      - name: Install dependencies
+      - name: Zip web files
         script: |
-          npm install
-      - name: Build web assets
-        script: |
-          # 빌드할 때 실제 결과물이 생성되는 폴더를 지정해야 합니다.
-          # 보통 웹 프로젝트는 'dist' 또는 'build' 폴더에 결과물이 생깁니다.
-          npm run build || true
+          # 현재 폴더의 모든 파일을 'moto-app.zip'으로 압축합니다.
+          zip -r moto-app.zip . -x "*.git*"
     artifacts:
-      # 결과물이 담길 폴더를 경로로 지정해 줍니다.
-      - dist/**
-      - build/**
+      - moto-app.zip
