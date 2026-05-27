@@ -1,5 +1,7 @@
 - name: Sync native dependencies
         script: |
-          # 파일을 실행(execute)하는 대신, node 명령어로 직접 읽어서 실행합니다.
-          # 이렇게 하면 실행 권한(chmod) 문제가 원천 차단됩니다.
+          # 1. 임시 폴더를 우리 프로젝트 안쪽 폴더로 지정하여 권한 문제를 피합니다.
+          export TMPDIR=$(pwd)/temp
+          mkdir -p $TMPDIR
+          # 2. 노드로 Capacitor를 안전하게 실행합니다.
           node node_modules/@capacitor/cli/bin/capacitor sync ios
