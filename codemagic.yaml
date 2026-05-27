@@ -9,7 +9,6 @@ workflows:
     scripts:
       - name: Install dependencies
         script: |
-          # 권한 문제 해결을 위해 npm 캐시를 정리하고 권한을 확보합니다
           npm cache clean --force
           npm install --unsafe-perm
       - name: Build web assets
@@ -24,7 +23,7 @@ workflows:
           cd ios && pod install && cd ..
       - name: Build for App Store
         script: |
-          xcode-project build --workspace ios/App.xcworkspace --scheme App
+          xcode-project build
     publishing:
       app_store_connect:
         api_key: $APP_STORE_CONNECT_PRIVATE_KEY
