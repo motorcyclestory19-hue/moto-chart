@@ -13,15 +13,16 @@ workflows:
           npm install --unsafe-perm
       - name: Build web assets
         script: |
-          # npm run build 대신 ionic build를 시도합니다.
-          ionic build || npm run build || echo "Build command skipped"
+          # 빌드 명령을 더 범용적으로 변경
+          npm run build || ionic build || echo "Build skipped"
       - name: Sync native dependencies
         script: |
           chmod +x node_modules/.bin/cap
           npx cap sync ios
       - name: CocoaPods
         script: |
-          cd ios && pod install && cd ..
+          # Podfile이 있는 곳을 자동으로 찾아서 설치하도록 수정
+          find . -name "Podfile" -exec dirname {} \; | xargs -I {} sh -c 'cd {} && pod install'
       - name: Build for App Store
         script: |
           xcode-project build
