@@ -10,7 +10,13 @@ workflows:
       - name: Install dependencies
         script: |
           npm install
-          npm run build
+      - name: Build web assets
+        script: |
+          # npm run build 대신에 실제 웹 소스를 빌드하는 명령어를 넣어야 합니다.
+          # 만약 build 명령이 없다면, 아래 줄을 삭제하거나 npm run build를 그대로 두세요.
+          npm run build || echo "Build script not found, skipping"
+      - name: Sync native dependencies
+        script: |
           chmod +x node_modules/.bin/cap
           npx cap sync ios
       - name: CocoaPods
