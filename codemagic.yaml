@@ -1,33 +1,5 @@
-workflows:
-  ios-build:
-    name: iOS Build
-    instance_type: mac_mini_m1
-    max_build_duration: 60
-    environment:
-      groups:
-        - app_store_credentials
-    scripts:
-      - name: Install dependencies
+- name: Sync native dependencies
         script: |
-          npm install
-      - name: Build web assets
-        script: |
-          npm run build || ionic build
-      - name: Sync native dependencies
-        script: |
-          # 1. 아예 로컬에 설치된 실행 파일을 직접 찾아냅니다.
-          # 2. npx나 전역 명령어에 의존하지 않고 전체 경로를 호출합니다.
-          ./node_modules/.bin/cap sync ios
-      - name: Install CocoaPods
-        script: |
-          cd ios && pod install
-      - name: Build for App Store
-        script: |
-          # 3. 모든 경로를 명시하여 빌드를 시도합니다.
-          xcodebuild -workspace ios/*.xcworkspace -scheme App -archivePath App.xcarchive archive
-    publishing:
-      app_store_connect:
-        api_key: $APP_STORE_CONNECT_PRIVATE_KEY
-        key_id: $APP_STORE_CONNECT_KEY_ID
-        issuer_id: $APP_STORE_CONNECT_ISSUER_ID
-        submit_to_app_store: true
+          # 파일을 실행(execute)하는 대신, node 명령어로 직접 읽어서 실행합니다.
+          # 이렇게 하면 실행 권한(chmod) 문제가 원천 차단됩니다.
+          node node_modules/@capacitor/cli/bin/capacitor sync ios
