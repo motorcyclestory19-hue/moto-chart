@@ -1,0 +1,12 @@
+workflows:
+  ionic-web-build:
+    name: Web SPA to Mobile
+    instance_type: mac_mini_m1
+    max_build_duration: 60
+    scripts:
+      - name: Zip web files
+        script: |
+          # 현재 폴더의 모든 파일을 'moto-app.zip'으로 압축합니다.
+          zip -r moto-app.zip . -x "*.git*"
+    artifacts:
+      - moto-app.zip

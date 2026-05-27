@@ -1,0 +1,1046 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>MOTO CHART - Motorcycle Market Data Platform</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700;900&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<!-- App Wrapper -->
+<div id="app">
+
+  <!-- ===== HEADER ===== -->
+  <header id="app-header">
+    <div class="header-left">
+      <div class="logo-wrap" onclick="onLogoClick()" role="button" aria-label="홈으로 이동 / 회원가입">
+        <div class="logo-icon">R</div>
+        <div class="logo-text">
+          <span class="logo-main">MOTO CHART</span>
+          <span class="logo-sub">MOTORCYCLE MARKET DATA PLATFORM</span>
+        </div>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="period-selector">
+        <select id="globalYear" onchange="onGlobalPeriodChange()">
+          <option value="0">전체연도</option>
+          <option value="2026" selected>2026년</option>
+          <option value="2025">2025년</option>
+          <option value="2024">2024년</option>
+          <option value="2023">2023년</option>
+          <option value="2022">2022년</option>
+        </select>
+        <span class="period-sep"></span>
+        <select id="globalMonth" onchange="onGlobalPeriodChange()">
+          <option value="0">전체월</option>
+          <option value="1">1월</option>
+          <option value="2">2월</option>
+          <option value="3">3월</option>
+          <option value="4">4월</option>
+          <option value="5" selected>5월</option>
+          <option value="6">6월</option>
+          <option value="7">7월</option>
+          <option value="8">8월</option>
+          <option value="9">9월</option>
+          <option value="10">10월</option>
+          <option value="11">11월</option>
+          <option value="12">12월</option>
+        </select>
+      </div>
+      <button class="icon-btn bell-btn" id="bellBtn" onclick="toggleNotifPanel()">
+        <i class="fas fa-bell"></i>
+        <span class="notif-badge" id="notifBadge" style="display:none"></span>
+      </button>
+    </div>
+  </header>
+
+  <!-- ===== MAIN CONTENT ===== -->
+  <main id="main-content">
+
+    <!-- ========== PAGE: HOME ========== -->
+    <section id="page-home" class="page active">
+      <div class="page-inner">
+        <div class="summary-card main-card">
+          <div class="summary-label">이달 총 등록대수</div>
+          <div class="summary-value" id="homeTotal">-<span class="unit">대</span></div>
+          <div class="summary-change" id="homeChange"><span class="change-sub">데이터 로딩 중...</span></div>
+        </div>
+
+        <div class="kpi-grid">
+          <div class="kpi-card">
+            <div class="kpi-label">브랜드 누적 등록대수</div>
+            <div class="kpi-value" id="kpiCumulative">-<span class="unit-sm">대</span></div>
+            <div class="kpi-change" id="kpiCumulChange">선택 연도 전체 합산</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">수입사 수</div>
+            <div class="kpi-value" id="kpiImporters">-<span class="unit-sm">개</span></div>
+            <div class="kpi-change" id="kpiImporterChange">선택 연도 기준</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">모델 수</div>
+            <div class="kpi-value" id="kpiModels">-<span class="unit-sm">개</span></div>
+            <div class="kpi-change" id="kpiModelChange">선택 연도 기준</div>
+          </div>
+        </div>
+
+        <div class="shortcut-section">
+          <div class="section-title">주요 통계 바로가기</div>
+          <div class="shortcut-grid">
+            <button class="shortcut-btn" onclick="navigateTo('stats','importer')">
+              <i class="fas fa-building"></i>
+              <span>수입사 TOP 10</span>
+            </button>
+            <button class="shortcut-btn" onclick="navigateTo('stats','model')">
+              <i class="fas fa-motorcycle"></i>
+              <span>모델 TOP 10</span>
+            </button>
+            <button class="shortcut-btn" onclick="navigateTo('analysis','displacement')">
+              <i class="fas fa-chart-pie"></i>
+              <span>배기량별 통계</span>
+            </button>
+            <button class="shortcut-btn" onclick="navigateTo('analysis','trend')">
+              <i class="fas fa-chart-line"></i>
+              <span>월별 추이</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="chart-section">
+          <div class="section-title">월별 등록대수 추이</div>
+          <div class="chart-wrap" style="height:200px">
+            <canvas id="homeTrendChart"></canvas>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== PAGE: STATS ========== -->
+    <section id="page-stats" class="page">
+      <div class="page-inner">
+        <div class="page-top-bar">
+          <div class="tab-header flex-1">
+            <button class="tab-btn active" data-tab="importer" onclick="switchStatsTab('importer')">수입사 TOP 10</button>
+            <button class="tab-btn" data-tab="model" onclick="switchStatsTab('model')">모델 TOP 10</button>
+          </div>
+          <button class="share-icon-btn" id="statsShareBtn" onclick="shareCurrentPage()" title="공유">
+            <i class="fas fa-share-alt"></i>
+          </button>
+        </div>
+
+        <!-- Importer Top 10 -->
+        <div id="statsImporterPane" class="tab-pane active">
+          <div class="subtab-bar">
+            <button class="subtab active" onclick="switchSubTab('importer','monthly',this)">월별 순위</button>
+            <button class="subtab" onclick="switchSubTab('importer','cumul',this)">누적 순위</button>
+            <button class="subtab" onclick="switchSubTab('importer','compare',this)">증감 비교</button>
+          </div>
+          <div class="rank-table-wrap">
+            <table class="rank-table" id="importerTable">
+              <colgroup>
+                <col style="width:36px">
+                <col>
+                <col style="width:74px">
+                <col style="width:70px">
+              </colgroup>
+              <thead>
+                <tr><th>순위</th><th>수입사</th><th>등록대수</th><th>전년 대비</th></tr>
+              </thead>
+              <tbody id="importerTableBody"></tbody>
+            </table>
+          </div>
+          <button class="more-btn" onclick="navigateTo('search','')">전체 수입사 보기 <i class="fas fa-chevron-right"></i></button>
+        </div>
+
+        <!-- Model Top 10 -->
+        <div id="statsModelPane" class="tab-pane">
+          <div class="subtab-bar">
+            <button class="subtab active" onclick="switchSubTab('model','monthly',this)">월별 순위</button>
+            <button class="subtab" onclick="switchSubTab('model','cumul',this)">누적 순위</button>
+            <button class="subtab" onclick="switchSubTab('model','compare',this)">증감 비교</button>
+          </div>
+          <div class="rank-table-wrap">
+            <table class="rank-table" id="modelTable">
+              <colgroup>
+                <col style="width:36px">
+                <col>
+                <col style="width:74px">
+                <col style="width:70px">
+              </colgroup>
+              <thead>
+                <tr><th>순위</th><th>모델</th><th>등록대수</th><th>전년 대비</th></tr>
+              </thead>
+              <tbody id="modelTableBody"></tbody>
+            </table>
+          </div>
+          <button class="more-btn" onclick="navigateTo('search','')">전체 모델 보기 <i class="fas fa-chevron-right"></i></button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== PAGE: ANALYSIS ========== -->
+    <section id="page-analysis" class="page">
+      <div class="page-inner">
+        <div class="page-top-bar">
+          <div class="tab-header flex-1">
+            <button class="tab-btn active" data-tab="displacement" onclick="switchAnalysisTab('displacement')">배기량별 통계</button>
+            <button class="tab-btn" data-tab="trend" onclick="switchAnalysisTab('trend')">월별 추이</button>
+            <button class="tab-btn" data-tab="yearly" onclick="switchAnalysisTab('yearly')">연도별 비교</button>
+          </div>
+          <button class="share-icon-btn" id="analysisShareBtn" onclick="shareCurrentPage()" title="공유">
+            <i class="fas fa-share-alt"></i>
+          </button>
+        </div>
+
+        <!-- Displacement -->
+        <div id="analysisDisplacementPane" class="tab-pane active">
+          <div class="section-title">배기량별 등록대수 비율</div>
+          <div class="chart-wrap donut-wrap" style="height:260px">
+            <canvas id="displacementDonut"></canvas>
+          </div>
+          <div id="displacementLegend" class="legend-list"></div>
+
+          <div class="section-title" style="margin-top:20px">배기량별 등록대수 추이 (최근 6개월)</div>
+          <div class="chart-wrap" style="height:200px">
+            <canvas id="displacementTrendChart"></canvas>
+          </div>
+        </div>
+
+        <!-- Monthly Trend -->
+        <div id="analysisTrendPane" class="tab-pane">
+          <div class="subtab-bar">
+            <button class="subtab active" onclick="switchTrendPeriod(12,this)">12개월</button>
+            <button class="subtab" onclick="switchTrendPeriod(24,this)">24개월</button>
+            <button class="subtab" onclick="switchTrendPeriod(36,this)">36개월</button>
+            <button class="subtab" onclick="switchTrendPeriod(0,this)">전체</button>
+          </div>
+          <div class="chart-wrap" style="height:220px">
+            <canvas id="monthlyTrendChart"></canvas>
+          </div>
+          <div class="section-title" style="margin-top:16px">월별 데이터</div>
+          <table class="rank-table" id="monthlyDataTable">
+            <thead>
+              <tr><th>월</th><th>2026년</th><th>2025년</th><th>전월 대비</th><th>전년 대비</th></tr>
+            </thead>
+            <tbody id="monthlyDataBody"></tbody>
+          </table>
+        </div>
+
+        <!-- Yearly Comparison -->
+        <div id="analysisYearlyPane" class="tab-pane">
+          <div class="subtab-bar">
+            <button class="subtab active" onclick="switchYearlyType('bar',this)">막대</button>
+            <button class="subtab" onclick="switchYearlyType('line',this)">선 그래프</button>
+          </div>
+          <div class="chart-wrap" style="height:240px">
+            <canvas id="yearlyCompareChart"></canvas>
+          </div>
+          <div class="section-title" style="margin-top:16px">연도별 요약</div>
+          <table class="rank-table">
+            <thead><tr><th>연도</th><th>등록대수</th><th>전년 대비</th></tr></thead>
+            <tbody id="yearlyTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== PAGE: SEARCH ========== -->
+    <section id="page-search" class="page">
+      <div class="page-inner">
+        <div class="search-bar-wrap">
+          <div class="search-input-wrap">
+            <i class="fas fa-search"></i>
+            <input type="text" id="searchInput" placeholder="모델명 검색 (예: PCX, NMAX)" oninput="onSearchInput()" />
+            <button class="clear-btn" onclick="clearSearch()"><i class="fas fa-times"></i></button>
+          </div>
+          <button class="filter-btn" id="filterBtn" onclick="openFilterSheet()"><i class="fas fa-sliders-h"></i></button>
+        </div>
+
+        <!-- 활성 필터 태그 표시 영역 -->
+        <div id="activeFilterBar"></div>
+
+        <div class="search-tab-bar">
+          <button class="stab active" onclick="switchSearchTab('all',this)">전체</button>
+          <button class="stab" onclick="switchSearchTab('popular',this)">인기 모델</button>
+          <button class="stab" onclick="switchSearchTab('new',this)">신규 모델</button>
+        </div>
+
+        <table class="rank-table" id="searchResultTable">
+          <thead>
+            <tr><th>순위</th><th>모델명</th><th>등록대수</th><th>전년 대비</th></tr>
+          </thead>
+          <tbody id="searchResultBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ========== PAGE: MY ========== -->
+    <section id="page-admin" class="page">
+      <div class="page-inner" id="adminContent">
+
+        <!-- ── 비로그인: 로그인/회원가입 카드 ── -->
+        <div id="myGuestView">
+          <div class="my-auth-card">
+            <div class="my-auth-logo">
+              <div class="logo-icon large">R</div>
+              <div class="logo-text">
+                <span class="logo-main">MOTO CHART</span>
+                <span class="logo-sub">MOTORCYCLE MARKET DATA PLATFORM</span>
+              </div>
+            </div>
+            <!-- 탭: 로그인 / 회원가입 -->
+            <div class="auth-tab-bar">
+              <button class="auth-tab active" id="tabLogin" onclick="switchAuthTab('login')">로그인</button>
+              <button class="auth-tab" id="tabSignup" onclick="switchAuthTab('signup')">회원가입</button>
+            </div>
+
+            <!-- 로그인 폼 -->
+            <div id="loginFormWrap">
+              <form class="login-form" onsubmit="adminLogin(event)">
+                <div class="form-group">
+                  <label>아이디</label>
+                  <input type="text" id="loginId" placeholder="아이디를 입력하세요" autocomplete="username" />
+                </div>
+                <div class="form-group">
+                  <label>비밀번호</label>
+                  <div class="pw-wrap">
+                    <input type="password" id="loginPw" placeholder="비밀번호를 입력하세요" autocomplete="current-password" />
+                    <button type="button" class="pw-toggle" onclick="togglePw('loginPw',this)"><i class="fas fa-eye"></i></button>
+                  </div>
+                </div>
+                <label class="checkbox-label">
+                  <input type="checkbox" id="loginRemember" /> 로그인 상태 유지
+                </label>
+                <button type="submit" class="login-btn">로그인</button>
+              </form>
+              <div class="auth-divider"><span>또는</span></div>
+              <button class="link-btn" onclick="switchAuthTab('findpw')">비밀번호 찾기</button>
+            </div>
+
+            <!-- 회원가입 폼 -->
+            <div id="signupFormWrap" style="display:none">
+              <!-- Step 1 : 정보 입력 -->
+              <div id="signupStep1">
+                <form class="login-form" onsubmit="sendVerifyCode(event)">
+                  <div class="form-group">
+                    <label>아이디 <span class="req">*</span></label>
+                    <input type="text" id="signupName" placeholder="아이디를 입력하세요 (4자 이상)" autocomplete="username" maxlength="20" />
+                    <span class="input-hint">영문, 숫자, 밑줄(_) 사용 가능</span>
+                  </div>
+                  <div class="form-group">
+                    <label>이메일 <span class="req">*</span></label>
+                    <input type="email" id="signupEmail" placeholder="example@email.com" autocomplete="email" />
+                  </div>
+                  <div class="form-group">
+                    <label>비밀번호 <span class="req">*</span></label>
+                    <div class="pw-wrap">
+                      <input type="password" id="signupPw" placeholder="8자 이상 영문+숫자 조합" autocomplete="new-password" />
+                      <button type="button" class="pw-toggle" onclick="togglePw('signupPw',this)"><i class="fas fa-eye"></i></button>
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <label>비밀번호 확인 <span class="req">*</span></label>
+                    <div class="pw-wrap">
+                      <input type="password" id="signupPwConfirm" placeholder="비밀번호를 다시 입력하세요" autocomplete="new-password" />
+                      <button type="button" class="pw-toggle" onclick="togglePw('signupPwConfirm',this)"><i class="fas fa-eye"></i></button>
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <label>핸드폰 번호 <span class="req-opt">(선택)</span></label>
+                    <div class="phone-wrap">
+                      <input type="tel" id="signupPhone" placeholder="010-0000-0000" autocomplete="tel"
+                             oninput="formatPhone(this)" maxlength="13" />
+                    </div>
+                  </div>
+                  <div class="terms-box">
+                    <label class="checkbox-label"><input type="checkbox" id="agreeAll" onchange="toggleAllAgree(this)"> <b>전체 동의</b></label>
+                    <div class="terms-detail">
+                      <label class="checkbox-label"><input type="checkbox" class="agree-item" id="agreeTerms"> [필수] 이용약관 동의 <button type="button" class="terms-view-btn" onclick="openTermsSheet('terms')">보기</button></label>
+                      <label class="checkbox-label"><input type="checkbox" class="agree-item" id="agreePrivacy"> [필수] 개인정보처리방침 동의 <button type="button" class="terms-view-btn" onclick="openTermsSheet('privacy')">보기</button></label>
+                      <label class="checkbox-label"><input type="checkbox" class="agree-item" id="agreeMarketing"> [선택] 마케팅 정보 수신 동의</label>
+                    </div>
+                  </div>
+                  <button type="submit" class="login-btn"><i class="fas fa-paper-plane"></i> 인증 코드 발송</button>
+                </form>
+              </div>
+              <!-- Step 2 : 이메일 코드 인증 -->
+              <div id="signupStep2" style="display:none">
+                <div class="verify-code-wrap">
+                  <div class="verify-icon"><i class="fas fa-envelope-open-text"></i></div>
+                  <div class="verify-title">이메일 인증</div>
+                  <div class="verify-desc" id="verifyDescText">이메일로 발송된 6자리 코드를 입력하세요</div>
+                  <div class="code-input-row">
+                    <input type="text" class="code-box" maxlength="1" oninput="codeInput(this,0)" onkeydown="codeKeydown(event,0)" id="code0" />
+                    <input type="text" class="code-box" maxlength="1" oninput="codeInput(this,1)" onkeydown="codeKeydown(event,1)" id="code1" />
+                    <input type="text" class="code-box" maxlength="1" oninput="codeInput(this,2)" onkeydown="codeKeydown(event,2)" id="code2" />
+                    <span class="code-dash">-</span>
+                    <input type="text" class="code-box" maxlength="1" oninput="codeInput(this,3)" onkeydown="codeKeydown(event,3)" id="code3" />
+                    <input type="text" class="code-box" maxlength="1" oninput="codeInput(this,4)" onkeydown="codeKeydown(event,4)" id="code4" />
+                    <input type="text" class="code-box" maxlength="1" oninput="codeInput(this,5)" onkeydown="codeKeydown(event,5)" id="code5" />
+                  </div>
+                  <div class="code-timer">남은 시간: <b id="timerDisplay">3:00</b></div>
+                  <button class="login-btn" onclick="verifyEmailCode()"><i class="fas fa-check-circle"></i> 인증 완료</button>
+                  <button class="link-btn" onclick="resendCode()"><i class="fas fa-redo"></i> 코드 재발송</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- 비밀번호 찾기 -->
+            <div id="findPwFormWrap" style="display:none">
+              <div class="verify-code-wrap">
+                <div class="verify-icon" style="color:#1565c0"><i class="fas fa-lock-open"></i></div>
+                <div class="verify-title">비밀번호 찾기</div>
+                <p class="verify-desc">가입한 아이디를 입력하시면<br>임시 비밀번호를 발급해 드립니다.</p>
+                <form class="login-form" onsubmit="sendTempPw(event)">
+                  <div class="form-group">
+                    <label>아이디</label>
+                    <input type="text" id="findPwId" placeholder="가입한 아이디 입력" autocomplete="username" />
+                  </div>
+                  <button type="submit" class="login-btn">임시 비밀번호 발급</button>
+                </form>
+                <button class="link-btn" onclick="switchAuthTab('login')">← 로그인으로 돌아가기</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── 로그인 상태 (일반 회원) ── -->
+        <div id="myMemberView" style="display:none">
+          <div class="my-profile-card">
+            <div class="my-avatar"><i class="fas fa-user"></i></div>
+            <div class="my-info">
+              <div class="my-name" id="myDisplayName">사용자</div>
+              <div class="my-userid" id="myDisplayUserId"></div>
+              <span class="my-badge" id="myBadge">일반회원</span>
+            </div>
+          </div>
+          <div class="my-menu-list">
+            <button class="my-menu-item" onclick="showToast('준비 중인 기능입니다')">
+              <i class="fas fa-bell"></i><span>알림 설정</span><i class="fas fa-chevron-right arrow"></i>
+            </button>
+            <button class="my-menu-item" onclick="showToast('준비 중인 기능입니다')">
+              <i class="fas fa-bookmark"></i><span>즐겨찾기 모델</span><i class="fas fa-chevron-right arrow"></i>
+            </button>
+            <button class="my-menu-item" onclick="downloadTemplate()">
+              <i class="fas fa-file-excel"></i><span>엑셀 업로드 양식 다운로드</span><i class="fas fa-chevron-right arrow"></i>
+            </button>
+            <button class="my-menu-item admin-only-menu" onclick="switchToAdminPanel()" id="adminMenuBtn" style="display:none">
+              <i class="fas fa-shield-alt"></i><span>관리자 페이지</span><i class="fas fa-chevron-right arrow"></i>
+            </button>
+          </div>
+          <button class="logout-btn" onclick="memberLogout()"><i class="fas fa-sign-out-alt"></i> 로그아웃</button>
+        </div>
+
+        <!-- ── 관리자 패널 ── -->
+        <div id="adminPanelView" style="display:none">
+          <div class="admin-panel-header">
+            <button class="back-btn" onclick="backToMyView()"><i class="fas fa-arrow-left"></i></button>
+            <span class="admin-panel-title"><i class="fas fa-shield-alt"></i> 관리자 페이지</span>
+          </div>
+
+        <!-- Admin Panel (내부 탭) -->
+        <div id="adminPanel">
+          <div class="admin-nav-tabs">
+            <button class="atab active" id="atab-upload"  onclick="switchAdminTab('upload',this)"><i class="fas fa-upload"></i> 업로드</button>
+            <button class="atab" id="atab-verify"  onclick="switchAdminTab('verify',this)"><i class="fas fa-table"></i> 데이터 확인</button>
+            <button class="atab" id="atab-edit"    onclick="switchAdminTab('edit',this)"><i class="fas fa-pen"></i> 데이터 수정</button>
+            <button class="atab" id="atab-status"  onclick="switchAdminTab('status',this)"><i class="fas fa-calendar-check"></i> 업로드 현황</button>
+            <button class="atab" id="atab-history" onclick="switchAdminTab('history',this)"><i class="fas fa-history"></i> 이력</button>
+          </div>
+
+          <!-- Upload Tab -->
+          <div id="adminUploadTab" class="admin-pane active">
+            <div class="step-indicator">
+              <div class="step active" id="step1"><span class="step-num">1</span><span class="step-label">파일 선택</span></div>
+              <div class="step-line"></div>
+              <div class="step" id="step2"><span class="step-num">2</span><span class="step-label">기준월 선택</span></div>
+              <div class="step-line"></div>
+              <div class="step" id="step3"><span class="step-num">3</span><span class="step-label">미리보기 검증</span></div>
+              <div class="step-line"></div>
+              <div class="step" id="step4"><span class="step-num">4</span><span class="step-label">최종 업로드</span></div>
+            </div>
+
+            <div id="uploadStep1" class="upload-step">
+              <div class="upload-zone" onclick="document.getElementById('fileInput').click()" id="uploadZone">
+                <i class="fas fa-cloud-upload-alt"></i>
+                <p>엑셀 파일을 선택하거나 드래그하여 업로드하세요.</p>
+                <button class="file-select-btn" type="button">파일 선택</button>
+                <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" style="display:none" onchange="onFileSelected(event)" />
+              </div>
+              <div class="upload-guide">
+                <div class="guide-title-row">
+                  <span class="guide-title">엑셀 양식 안내</span>
+                  <button type="button" class="template-dl-btn" onclick="downloadTemplate()">
+                    <i class="fas fa-file-excel"></i> 양식 다운로드
+                  </button>
+                </div>
+                <table class="guide-table">
+                  <tr><th>컬럼명</th><th>설명</th><th>예시</th></tr>
+                  <tr><td>제작사</td><td>수입사 또는 제작사명</td><td>HONDA</td></tr>
+                  <tr><td>차종명</td><td>모델명</td><td>HONDA PCX</td></tr>
+                  <tr><td>배기량</td><td>배기량 (cc)</td><td>125</td></tr>
+                  <tr><td>등록 대수</td><td>월별 등록대수</td><td>1628</td></tr>
+                </table>
+                <p class="guide-note">※ 헤더 순서에 무관하게 컬럼명이 정확히 일치해야 합니다.</p>
+              </div>
+            </div>
+
+            <div id="uploadStep2" class="upload-step" style="display:none">
+              <!-- 사용신고 유형 -->
+              <div class="upload-type-section">
+                <div class="upload-section-label"><i class="fas fa-tag"></i> 이륜차 사용신고 유형</div>
+                <div class="upload-type-grid" style="grid-template-columns:1fr">
+                  <label class="type-radio-card">
+                    <input type="radio" name="uploadType" value="전체" checked />
+                    <span class="type-card-inner">
+                      <i class="fas fa-layer-group"></i>
+                      <b>전체</b>
+                      <small>모든 신고 유형 포함</small>
+                    </span>
+                  </label>
+                </div>
+              </div>
+
+              <!-- 사용신고 년/월 -->
+              <div class="upload-section-label" style="margin-top:4px"><i class="fas fa-calendar-alt"></i> 사용신고 기준 연월</div>
+              <div class="year-month-picker">
+                <div class="form-group">
+                  <label>연도 <span class="req">*</span></label>
+                  <select id="uploadYear">
+                    <option value="2026">2026년</option>
+                    <option value="2025">2025년</option>
+                    <option value="2024">2024년</option>
+                    <option value="2023">2023년</option>
+                    <option value="2022">2022년</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label>월 <span class="req">*</span></label>
+                  <select id="uploadMonth">
+                    <option value="1">1월</option><option value="2">2월</option>
+                    <option value="3">3월</option><option value="4">4월</option>
+                    <option value="5" selected>5월</option><option value="6">6월</option>
+                    <option value="7">7월</option><option value="8">8월</option>
+                    <option value="9">9월</option><option value="10">10월</option>
+                    <option value="11">11월</option><option value="12">12월</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- 선택 요약 배지 -->
+              <div class="upload-period-badge" id="uploadPeriodBadge">
+                <i class="fas fa-info-circle"></i>
+                <span id="uploadPeriodText">2026년 5월 · 신규신고 데이터로 업로드됩니다</span>
+              </div>
+
+              <div class="upload-notice">
+                <i class="fas fa-exclamation-triangle"></i>
+                동일 기간·유형 데이터가 이미 존재할 경우 중복 등록될 수 있습니다.<br>
+                업로드 전 <b>데이터 확인</b> 탭에서 기존 데이터를 먼저 확인하세요.
+              </div>
+
+              <button class="primary-btn" onclick="goUploadStep(3)">
+                <i class="fas fa-eye"></i> 미리보기 확인
+              </button>
+              <button class="back-step-btn" onclick="goUploadStep(1)">
+                <i class="fas fa-arrow-left"></i> 이전 단계
+              </button>
+            </div>
+
+            <div id="uploadStep3" class="upload-step" style="display:none">
+              <!-- 기간·유형 확인 배지 -->
+              <div class="preview-period-bar" id="previewPeriodBar"></div>
+              <!-- 건수 정보 -->
+              <div class="preview-info" id="previewInfo"></div>
+              <!-- 검증 결과 -->
+              <div class="preview-validate" id="previewValidate"></div>
+              <div class="rank-table-wrap" style="max-height:260px;overflow-y:auto">
+                <table class="rank-table" id="previewTable">
+                  <thead><tr id="previewHeader"></tr></thead>
+                  <tbody id="previewBody"></tbody>
+                </table>
+              </div>
+              <button class="primary-btn" onclick="goUploadStep(4)">
+                <i class="fas fa-cloud-upload-alt"></i> 최종 업로드
+              </button>
+              <button class="back-step-btn" onclick="goUploadStep(2)">
+                <i class="fas fa-arrow-left"></i> 이전 단계
+              </button>
+            </div>
+
+            <div id="uploadStep4" class="upload-step" style="display:none">
+              <div class="upload-result" id="uploadResult"></div>
+            </div>
+          </div>
+
+          <!-- Verify Tab -->
+          <div id="adminVerifyTab" class="admin-pane">
+
+            <!-- 필터 영역 -->
+            <div class="verify-filter-wrap">
+              <div class="verify-filter-row">
+                <div class="vf-group">
+                  <label class="vf-label">연도</label>
+                  <select id="verifyYear" onchange="loadVerifyData()">
+                    <option value="2026">2026년</option>
+                    <option value="2025">2025년</option>
+                    <option value="2024">2024년</option>
+                    <option value="2023">2023년</option>
+                  </select>
+                </div>
+                <div class="vf-group">
+                  <label class="vf-label">월</label>
+                  <select id="verifyMonth" onchange="loadVerifyData()">
+                    <option value="0">전체</option>
+                    <option value="1">1월</option><option value="2">2월</option>
+                    <option value="3">3월</option><option value="4">4월</option>
+                    <option value="5" selected>5월</option><option value="6">6월</option>
+                    <option value="7">7월</option><option value="8">8월</option>
+                    <option value="9">9월</option><option value="10">10월</option>
+                    <option value="11">11월</option><option value="12">12월</option>
+                  </select>
+                </div>
+                <div class="vf-group">
+                  <label class="vf-label">신고 유형</label>
+                  <div class="vf-type-fixed">
+                    <i class="fas fa-layer-group"></i> 전체
+                  </div>
+                </div>
+              </div>
+              <button class="verify-search-btn" onclick="loadVerifyData()">
+                <i class="fas fa-search"></i> 조회
+              </button>
+            </div>
+
+            <!-- 요약 통계 카드 -->
+            <div class="verify-stat-cards" id="verifyStatCards"></div>
+
+            <!-- 현재 조회 기간 배지 -->
+            <div class="verify-period-badge" id="verifyPeriodBadge"></div>
+
+            <!-- 수입사별 집계 -->
+            <div class="verify-section-title">수입사별 집계</div>
+            <div class="rank-table-wrap" style="max-height:200px;overflow-y:auto">
+              <table class="rank-table">
+                <thead>
+                  <tr><th>순위</th><th>수입사</th><th>모델 수</th><th>등록대수</th><th>비율</th></tr>
+                </thead>
+                <tbody id="verifyImporterBody"></tbody>
+              </table>
+            </div>
+
+            <!-- 모델별 상세 -->
+            <div class="verify-section-title" style="margin-top:12px">
+              모델별 상세 데이터
+              <span class="verify-count-badge" id="verifyCountBadge"></span>
+            </div>
+            <div class="verify-search-wrap">
+              <input type="text" id="verifySearchInput" placeholder="모델명·수입사 검색..." oninput="filterVerifyTable()" />
+            </div>
+            <div class="rank-table-wrap" style="max-height:300px;overflow-y:auto">
+              <table class="rank-table">
+                <thead>
+                  <tr><th>순위</th><th>수입사</th><th>모델명</th><th>배기량</th><th>신고유형</th><th>등록대수</th></tr>
+                </thead>
+                <tbody id="verifyBody"></tbody>
+              </table>
+            </div>
+            <div class="pagination" id="verifyPagination"></div>
+          </div>
+
+          <!-- ===== Edit Tab ===== -->
+          <div id="adminEditTab" class="admin-pane">
+
+            <!-- 수정 필터 -->
+            <div class="verify-filter-wrap">
+              <div class="verify-filter-row">
+                <div class="vf-group">
+                  <label class="vf-label">연도</label>
+                  <select id="editYear" onchange="loadEditData()">
+                    <option value="2026">2026년</option>
+                    <option value="2025">2025년</option>
+                    <option value="2024">2024년</option>
+                    <option value="2023">2023년</option>
+                  </select>
+                </div>
+                <div class="vf-group">
+                  <label class="vf-label">월</label>
+                  <select id="editMonth" onchange="loadEditData()">
+                    <option value="0">전체</option>
+                    <option value="1">1월</option><option value="2">2월</option>
+                    <option value="3">3월</option><option value="4">4월</option>
+                    <option value="5" selected>5월</option><option value="6">6월</option>
+                    <option value="7">7월</option><option value="8">8월</option>
+                    <option value="9">9월</option><option value="10">10월</option>
+                    <option value="11">11월</option><option value="12">12월</option>
+                  </select>
+                </div>
+                <div class="vf-group">
+                  <label class="vf-label">신고유형</label>
+                  <div class="vf-type-fixed">
+                    <i class="fas fa-layer-group"></i> 전체
+                  </div>
+                </div>
+              </div>
+              <button class="verify-search-btn" onclick="loadEditData()">
+                <i class="fas fa-search"></i> 조회
+              </button>
+            </div>
+
+            <!-- 수정 안내 -->
+            <div class="edit-guide-bar">
+              <i class="fas fa-info-circle"></i>
+              행을 탭하면 수정·삭제할 수 있습니다
+            </div>
+
+            <!-- 요약 카드 -->
+            <div class="verify-stat-cards" id="editStatCards"></div>
+
+            <!-- 검색 + 전체삭제 -->
+            <div class="edit-toolbar">
+              <div class="verify-search-wrap" style="flex:1;margin-bottom:0">
+                <input type="text" id="editSearchInput" placeholder="모델명·수입사 검색..." oninput="filterEditTable()" />
+              </div>
+              <button class="edit-delete-all-btn" onclick="deleteAllEditData()">
+                <i class="fas fa-trash-alt"></i> 전체 삭제
+              </button>
+            </div>
+
+            <!-- 데이터 테이블 -->
+            <div class="rank-table-wrap" style="max-height:340px;overflow-y:auto;margin-top:8px">
+              <table class="rank-table edit-table">
+                <thead>
+                  <tr><th>#</th><th>수입사</th><th>모델명</th><th>배기량</th><th>유형</th><th>등록대수</th></tr>
+                </thead>
+                <tbody id="editBody"></tbody>
+              </table>
+            </div>
+            <div class="edit-count-bar" id="editCountBar"></div>
+          </div>
+
+          <!-- ===== Status Tab ===== -->
+          <div id="adminStatusTab" class="admin-pane">
+
+            <!-- 연도 선택 -->
+            <div class="status-year-bar">
+              <button class="status-year-btn" onclick="changeStatusYear(-1)"><i class="fas fa-chevron-left"></i></button>
+              <span class="status-year-label" id="statusYearLabel">2026년</span>
+              <button class="status-year-btn" onclick="changeStatusYear(1)"><i class="fas fa-chevron-right"></i></button>
+            </div>
+
+            <!-- 업로드 현황 요약 카드 -->
+            <div class="status-summary-cards" id="statusSummaryCards"></div>
+
+            <!-- 월별 업로드 현황 캘린더 -->
+            <div class="status-calendar" id="statusCalendar"></div>
+
+            <!-- 신고유형별 현황 -->
+            <div class="verify-section-title" style="margin-top:14px">신고유형별 업로드 현황</div>
+            <div id="statusTypeGrid" class="status-type-grid"></div>
+
+          </div>
+
+          <!-- History Tab -->
+          <div id="adminHistoryTab" class="admin-pane">
+            <div class="history-filter-bar">
+              <button class="htab active" onclick="filterHistory('all',this)">전체</button>
+              <button class="htab" onclick="filterHistory('upload',this)">업로드</button>
+              <button class="htab" onclick="filterHistory('edit',this)">데이터 수정</button>
+            </div>
+            <table class="rank-table history-table">
+              <thead>
+                <tr><th>기간</th><th>행위</th><th>유형</th><th>파일명</th><th>업로드 일시</th><th>건수</th><th>상태</th><th>확인</th></tr>
+              </thead>
+              <tbody id="historyBody"></tbody>
+            </table>
+            <div class="pagination" id="historyPagination"></div>
+          </div>
+
+          <button class="logout-btn" onclick="adminLogout()"><i class="fas fa-sign-out-alt"></i> 관리자 로그아웃</button>
+        </div><!-- /adminPanel -->
+        </div><!-- /adminPanelView -->
+      </div><!-- /adminContent -->
+    </section>
+
+  </main>
+
+  <!-- ===== BOTTOM NAV ===== -->
+  <nav id="bottom-nav">
+    <button class="nav-btn active" onclick="navigateTo('home','')" data-page="home">
+      <i class="fas fa-home"></i><span>홈</span>
+    </button>
+    <button class="nav-btn" onclick="navigateTo('stats','importer')" data-page="stats">
+      <i class="fas fa-chart-bar"></i><span>통계</span>
+    </button>
+    <button class="nav-btn" onclick="navigateTo('analysis','displacement')" data-page="analysis">
+      <i class="fas fa-chart-pie"></i><span>분석</span>
+    </button>
+    <button class="nav-btn" onclick="navigateTo('search','')" data-page="search">
+      <i class="fas fa-search"></i><span>검색</span>
+    </button>
+    <button class="nav-btn" onclick="navigateTo('admin','')" data-page="admin">
+      <i class="fas fa-user-circle"></i><span>MY</span>
+    </button>
+  </nav>
+
+  <!-- Model Detail Modal -->
+  <div id="modelModal" class="modal-overlay" onclick="closeModal(event)">
+    <div class="modal-sheet">
+      <div class="modal-handle"></div>
+      <div class="modal-header">
+        <div class="modal-model-img"><i class="fas fa-motorcycle"></i></div>
+        <div class="modal-model-info">
+          <div class="modal-model-name" id="modalModelName"></div>
+          <div class="modal-importer" id="modalImporter"></div>
+          <div class="modal-date" id="modalDate"></div>
+        </div>
+        <button class="modal-close" onclick="closeModelModal()"><i class="fas fa-times"></i></button>
+      </div>
+      <div class="modal-kpis">
+        <div class="modal-kpi">
+          <div class="mkpi-label">이달 등록대수</div>
+          <div class="mkpi-value" id="modalCount"></div>
+          <div class="mkpi-change" id="modalChange"></div>
+        </div>
+        <div class="modal-kpi">
+          <div class="mkpi-label">누적 등록대수</div>
+          <div class="mkpi-value" id="modalCumul"></div>
+        </div>
+      </div>
+      <div class="modal-chart-wrap" style="height:160px">
+        <canvas id="modalChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div id="toast" class="toast"></div>
+
+  <!-- ===== SHARE BOTTOM SHEET ===== -->
+  <div id="shareOverlay" class="modal-overlay" onclick="closeShareSheet(event)">
+    <div class="modal-sheet share-sheet">
+      <div class="modal-handle"></div>
+      <div class="share-sheet-title" id="shareSheetTitle">통계 공유하기</div>
+      <div class="share-sheet-desc" id="shareSheetDesc"></div>
+
+      <!-- 공유 채널 버튼들 -->
+      <div class="share-channels">
+        <button class="share-ch-btn" onclick="doShare('kakao')">
+          <span class="share-ch-icon kakao-icon">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3C6.477 3 2 6.589 2 11c0 2.895 1.819 5.435 4.568 6.942l-1.15 4.22a.3.3 0 0 0 .447.327L10.82 19.8A11.8 11.8 0 0 0 12 19c5.523 0 10-3.589 10-8s-4.477-8-10-8Z"/></svg>
+          </span>
+          <span>카카오톡</span>
+        </button>
+        <button class="share-ch-btn" onclick="doShare('copy')">
+          <span class="share-ch-icon copy-icon"><i class="fas fa-link"></i></span>
+          <span>링크 복사</span>
+        </button>
+      </div>
+
+      <!-- 공유 텍스트 미리보기 -->
+      <div class="share-preview">
+        <div class="share-preview-label">공유 내용 미리보기</div>
+        <div class="share-preview-box" id="sharePreviewBox"></div>
+      </div>
+
+      <button class="share-cancel-btn" onclick="closeShareSheetBtn()">취소</button>
+    </div>
+  </div>
+
+  <!-- ===== 검색 필터 바텀시트 ===== -->
+  <div id="filterOverlay" class="modal-overlay" onclick="closeFilterSheet(event)">
+    <div class="modal-sheet filter-sheet">
+      <div class="modal-handle"></div>
+      <div class="filter-sheet-header">
+        <span class="filter-sheet-title"><i class="fas fa-sliders-h"></i> 검색 필터</span>
+        <button class="filter-reset-btn" onclick="resetFilter()"><i class="fas fa-rotate-left"></i> 초기화</button>
+      </div>
+
+      <!-- 배기량 구간 필터 -->
+      <div class="filter-section">
+        <div class="filter-section-label">배기량</div>
+        <div class="filter-chip-wrap" id="displacementChips">
+          <button class="filter-chip active" data-disp="all"        onclick="selectDisplacementFilter(this)">전체</button>
+          <button class="filter-chip"        data-disp="125cc 이하" onclick="selectDisplacementFilter(this)">125cc 이하</button>
+          <button class="filter-chip"        data-disp="126~400cc"  onclick="selectDisplacementFilter(this)">126~400cc</button>
+          <button class="filter-chip"        data-disp="401~900cc"  onclick="selectDisplacementFilter(this)">401~900cc</button>
+          <button class="filter-chip"        data-disp="901~1000cc" onclick="selectDisplacementFilter(this)">901~1000cc</button>
+          <button class="filter-chip"        data-disp="1000cc 초과" onclick="selectDisplacementFilter(this)">1000cc 초과</button>
+        </div>
+      </div>
+
+      <!-- 등록대수 범위 필터 -->
+      <div class="filter-section">
+        <div class="filter-section-label">등록대수</div>
+        <div class="filter-chip-wrap" id="countChips">
+          <button class="filter-chip active" data-count="0"   onclick="selectCountFilter(this)">전체</button>
+          <button class="filter-chip" data-count="100"  onclick="selectCountFilter(this)">100대 이상</button>
+          <button class="filter-chip" data-count="300"  onclick="selectCountFilter(this)">300대 이상</button>
+          <button class="filter-chip" data-count="500"  onclick="selectCountFilter(this)">500대 이상</button>
+          <button class="filter-chip" data-count="1000" onclick="selectCountFilter(this)">1,000대 이상</button>
+        </div>
+      </div>
+
+      <button class="filter-apply-btn" onclick="applyFilter()">
+        <i class="fas fa-check"></i> 필터 적용
+      </button>
+    </div>
+  </div>
+
+  <!-- ===== 로고 랜딩 시트 ===== -->
+  <div id="logoSheetOverlay" class="modal-overlay" onclick="if(event.target===this)closeLogoSheet()">
+    <div class="modal-sheet logo-landing-sheet">
+      <div class="modal-handle"></div>
+
+      <!-- 브랜드 헤더 -->
+      <div class="lls-brand">
+        <div class="lls-logo-icon">R</div>
+        <div class="lls-brand-text">
+          <span class="lls-brand-main">MOTO CHART</span>
+          <span class="lls-brand-sub">MOTORCYCLE MARKET DATA PLATFORM</span>
+        </div>
+      </div>
+
+      <!-- 서비스 소개 배지 3개 -->
+      <div class="lls-feature-row">
+        <div class="lls-feature">
+          <i class="fas fa-chart-bar"></i>
+          <span>실시간 등록통계</span>
+        </div>
+        <div class="lls-feature">
+          <i class="fas fa-search"></i>
+          <span>모델 검색·비교</span>
+        </div>
+        <div class="lls-feature">
+          <i class="fas fa-chart-pie"></i>
+          <span>배기량 분석</span>
+        </div>
+      </div>
+
+      <!-- 로그인 상태별 콘텐츠 -->
+      <div id="llsGuestActions">
+        <!-- 비로그인: 가입 유도 -->
+        <p class="lls-desc">회원가입 후 데이터 업로드·관리 기능을<br>이용할 수 있습니다</p>
+        <button class="lls-primary-btn" onclick="closeLogoSheet();navigateTo('admin','');setTimeout(()=>switchAuthTab('signup'),120)">
+          <i class="fas fa-user-plus"></i> 회원가입
+        </button>
+        <button class="lls-secondary-btn" onclick="closeLogoSheet();navigateTo('admin','');setTimeout(()=>switchAuthTab('login'),120)">
+          <i class="fas fa-sign-in-alt"></i> 로그인
+        </button>
+      </div>
+
+      <div id="llsMemberActions" style="display:none">
+        <!-- 로그인 중: 빠른 이동 메뉴 -->
+        <p class="lls-desc" id="llsWelcomeMsg"></p>
+        <div class="lls-quick-menu">
+          <button class="lls-quick-btn" onclick="closeLogoSheet();navigateTo('home','')">
+            <i class="fas fa-home"></i><span>홈</span>
+          </button>
+          <button class="lls-quick-btn" onclick="closeLogoSheet();navigateTo('stats','importer')">
+            <i class="fas fa-chart-bar"></i><span>통계</span>
+          </button>
+          <button class="lls-quick-btn" onclick="closeLogoSheet();navigateTo('analysis','displacement')">
+            <i class="fas fa-chart-pie"></i><span>분석</span>
+          </button>
+          <button class="lls-quick-btn" onclick="closeLogoSheet();navigateTo('search','')">
+            <i class="fas fa-search"></i><span>검색</span>
+          </button>
+        </div>
+        <button class="lls-secondary-btn" onclick="closeLogoSheet();navigateTo('admin','')">
+          <i class="fas fa-user-circle"></i> MY 페이지
+        </button>
+      </div>
+
+      <button class="lls-cancel-btn" onclick="closeLogoSheet()">닫기</button>
+    </div>
+  </div>
+
+  <!-- ===== 약관 시트 모달 ===== -->
+  <div id="termsSheetOverlay" class="modal-overlay" onclick="if(event.target===this)closeTermsSheet()">
+    <div class="modal-sheet terms-sheet" id="termsSheet">
+      <div class="terms-sheet-header">
+        <span class="terms-sheet-title" id="termsSheetTitle">이용약관</span>
+        <button class="terms-sheet-close" onclick="closeTermsSheet()" aria-label="닫기">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="terms-sheet-body" id="termsSheetBody">
+        <!-- JS로 동적 삽입 -->
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== 데이터 수정 모달 ===== -->
+  <div id="editModal" class="modal-overlay" onclick="closeEditModal(event)">
+    <div class="modal-sheet edit-modal-sheet">
+      <div class="modal-handle"></div>
+      <div class="edit-modal-header">
+        <span class="edit-modal-title"><i class="fas fa-pen"></i> 데이터 수정</span>
+        <button class="modal-close" onclick="closeEditModalBtn()"><i class="fas fa-times"></i></button>
+      </div>
+      <form class="edit-modal-form" onsubmit="submitEditData(event)">
+        <input type="hidden" id="editRecordId" />
+        <div class="form-group">
+          <label>수입사 <span class="req">*</span></label>
+          <input type="text" id="editImporter" placeholder="수입사명 입력" autocomplete="off" />
+        </div>
+        <div class="form-group">
+          <label>모델명 <span class="req">*</span></label>
+          <input type="text" id="editModelName" placeholder="모델명 입력" autocomplete="off" />
+        </div>
+        <div class="form-group">
+          <label>배기량 (cc) <span class="req">*</span></label>
+          <input type="number" id="editDisplacement" placeholder="예: 125" min="1" />
+        </div>
+        <div class="form-group">
+          <label>신고 유형 <span class="req">*</span></label>
+          <select id="editReportType">
+            <option value="신규신고">신규신고</option>
+            <option value="변경신고">변경신고</option>
+            <option value="말소신고">말소신고</option>
+            <option value="전체">전체</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>등록대수 <span class="req">*</span></label>
+          <input type="number" id="editCount" placeholder="예: 1628" min="0" />
+        </div>
+        <div class="edit-modal-actions">
+          <button type="button" class="edit-delete-btn" onclick="deleteEditRecord()">
+            <i class="fas fa-trash"></i> 삭제
+          </button>
+          <button type="submit" class="edit-save-btn">
+            <i class="fas fa-check"></i> 저장
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ===== 알림 패널 ===== -->
+  <div id="notifPanel" class="notif-panel" style="display:none">
+    <div class="notif-panel-header">
+      <span class="notif-panel-title"><i class="fas fa-bell"></i> 데이터 업데이트 알림</span>
+      <button class="notif-read-all" onclick="markAllRead()">모두 읽음</button>
+    </div>
+    <ul class="notif-list" id="notifList"></ul>
+  </div>
+  <div id="notifDim" onclick="closeNotifPanel()" style="display:none"></div>
+
+  <!-- 스와이프 힌트 -->
+  <div id="swipeHint" class="swipe-hint">
+    <i class="fas fa-arrow-left"></i> 이전 페이지
+  </div>
+</div>
+
+<script src="js/data.js"></script>
+<script src="js/charts.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
