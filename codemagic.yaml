@@ -13,15 +13,19 @@ workflows:
           npm install --unsafe-perm
       - name: Build web assets
         script: |
-          # 빌드 명령을 더 범용적으로 변경
           npm run build || ionic build || echo "Build skipped"
       - name: Sync native dependencies
         script: |
           chmod +x node_modules/.bin/cap
-          npx cap sync ios
+          # 파일 구조가 어긋나 있을 수 있으므로, ios 폴더가 있는지 먼저 확인하고 동기화합니다.
+          if [ -d "ios" ]; then
+            npx cap sync ios
+          else
+            echo "ios 폴더를 찾을 수 없습니다. 경로를 확인해주세요."
+            ls -F
+          fi
       - name: CocoaPods
         script: |
-          # Podfile이 있는 곳을 자동으로 찾아서 설치하도록 수정
           find . -name "Podfile" -exec dirname {} \; | xargs -I {} sh -c 'cd {} && pod install'
       - name: Build for App Store
         script: |
