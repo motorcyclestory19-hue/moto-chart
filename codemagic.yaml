@@ -17,17 +17,19 @@ workflows:
       - name: Add iOS platform and Sync
         script: |
           chmod +x node_modules/.bin/cap
-          # ios 폴더가 없으면 새로 만들고 동기화합니다
-          if [ ! -d "ios" ]; then
-            npx cap add ios
-          fi
+          if [ ! -d "ios" ]; then npx cap add ios; fi
           npx cap sync ios
-      - name: CocoaPods
+      - name: Install CocoaPods
         script: |
-          find . -name "Podfile" -exec dirname {} \; | xargs -I {} sh -c 'cd {} && pod install'
+          cd ios && pod install
+      - name: Find Scheme Names
+        script: |
+          # 프로젝트에 있는 빌드 설정 이름을 출력합니다. (이걸 보고 무엇을 적어야 할지 알 수 있어요)
+          xcodebuild -workspace ios/*.xcworkspace -list
       - name: Build for App Store
         script: |
-          xcode-project build
+          # 위에서 확인된 이름으로 아래 --scheme 뒤를 수정할 예정입니다. 일단 Runner로 시도합니다.
+          xcode-project build --workspace ios/*.xcworkspace --scheme Runner
     publishing:
       app_store_connect:
         api_key: $APP_STORE_CONNECT_PRIVATE_KEY
