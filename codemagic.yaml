@@ -12,16 +12,14 @@ workflows:
           npm install
       - name: Build web assets
         script: |
-          # 빌드 명령을 실행하고, 결과물이 존재하는지 확인합니다
           npm run build || ionic build
-          ls -F
       - name: Sync native dependencies
         script: |
-          # webDir을 강제로 dist로 지정하고 동기화합니다
-          npx cap sync ios --webDir dist
+          # chmod 대신 npx를 사용하여 직접 실행하지 않고 권한 문제를 피합니다
+          npx cap sync ios
       - name: Install CocoaPods
         script: |
-          cd ios && pod install
+          cd ios && npx pod-install
       - name: Build for App Store
         script: |
           xcode-project build --workspace ios/*.xcworkspace --scheme App
