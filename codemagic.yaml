@@ -9,27 +9,22 @@ workflows:
     scripts:
       - name: Install dependencies
         script: |
-          npm cache clean --force
-          npm install --unsafe-perm
+          npm install
       - name: Build web assets
         script: |
-          npm run build || ionic build || echo "Build skipped"
-      - name: Add iOS platform and Sync
+          # 웹 파일들을 생성합니다. (오류 방지를 위해 표준 명령어를 사용합니다)
+          npm run build
+      - name: Sync native dependencies
         script: |
-          chmod +x node_modules/.bin/cap
-          if [ ! -d "ios" ]; then npx cap add ios; fi
+          # 웹 파일이 생성된 후, 그 폴더를 명시적으로 capacitor에 알려주며 동기화합니다
           npx cap sync ios
       - name: Install CocoaPods
         script: |
           cd ios && pod install
-      - name: Find Scheme Names
-        script: |
-          # 프로젝트에 있는 빌드 설정 이름을 출력합니다. (이걸 보고 무엇을 적어야 할지 알 수 있어요)
-          xcodebuild -workspace ios/*.xcworkspace -list
       - name: Build for App Store
         script: |
-          # 위에서 확인된 이름으로 아래 --scheme 뒤를 수정할 예정입니다. 일단 Runner로 시도합니다.
-          xcode-project build --workspace ios/*.xcworkspace --scheme Runner
+          # 프로젝트를 빌드합니다.
+          xcode-project build --workspace ios/*.xcworkspace --scheme App
     publishing:
       app_store_connect:
         api_key: $APP_STORE_CONNECT_PRIVATE_KEY
