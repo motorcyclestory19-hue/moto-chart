@@ -15,8 +15,8 @@ workflows:
           npm run build || ionic build
       - name: Sync native dependencies
         script: |
-          # .bin/cap을 직접 호출하지 않고 npx를 사용합니다
-          npx cap sync ios
+          # npx 대신 npm을 통해 명시적으로 실행합니다
+          npm run cap sync ios
       - name: Install CocoaPods
         script: |
           cd ios && pod install
