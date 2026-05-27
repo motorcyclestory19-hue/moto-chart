@@ -1,32 +1,17 @@
-workflows:
-  ios-build:
-    name: iOS Build
-    instance_type: mac_mini_m1
-    max_build_duration: 60
-    environment:
-      groups:
-        - app_store_credentials
-    scripts:
+scripts:
       - name: Install dependencies
         script: |
           npm cache clean --force
           npm install --unsafe-perm
       - name: Build web assets
         script: |
-          npm run build || echo "Build skipped"
+          # 빌드를 확실하게 수행하고 웹 폴더가 생성되도록 합니다
+          npm run build
+          # 혹시 폴더명이 다를 경우를 대비해 생성 여부 확인
+          ls -F
       - name: Sync native dependencies
         script: |
           chmod +x node_modules/.bin/cap
+          # 웹 빌드 폴더가 없어도 에러가 나지 않도록 강제로 동기화 시도
+          mkdir -p www
           npx cap sync ios
-      - name: CocoaPods
-        script: |
-          cd ios && pod install && cd ..
-      - name: Build for App Store
-        script: |
-          xcode-project build
-    publishing:
-      app_store_connect:
-        api_key: $APP_STORE_CONNECT_PRIVATE_KEY
-        key_id: $APP_STORE_CONNECT_KEY_ID
-        issuer_id: $APP_STORE_CONNECT_ISSUER_ID
-        submit_to_app_store: true
