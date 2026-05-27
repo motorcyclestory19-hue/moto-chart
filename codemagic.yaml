@@ -15,11 +15,11 @@ workflows:
           npm run build || ionic build
       - name: Sync native dependencies
         script: |
-          # chmod 대신 npx를 사용하여 직접 실행하지 않고 권한 문제를 피합니다
+          # .bin/cap을 직접 호출하지 않고 npx를 사용합니다
           npx cap sync ios
       - name: Install CocoaPods
         script: |
-          cd ios && npx pod-install
+          cd ios && pod install
       - name: Build for App Store
         script: |
           xcode-project build --workspace ios/*.xcworkspace --scheme App
