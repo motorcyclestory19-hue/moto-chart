@@ -7,22 +7,22 @@ workflows:
       groups:
         - app_store_credentials
     scripts:
-      - name: Install dependencies
-        script: |
-          npm install
       - name: Build web assets
         script: |
+          # 1. 빌드 폴더가 있다면 삭제하고 새로 생성
+          rm -rf dist
           npm run build || ionic build
       - name: Sync native dependencies
         script: |
-          # npx나 직접 경로 호출 없이, npm 명령어로만 실행합니다
-          npm install @capacitor/cli --save-dev
-          npx cap sync ios
+          # 2. npx 대신 npm을 사용하여 확실한 경로로 호출
+          npm install -g @capacitor/cli
+          capacitor sync ios
       - name: Install CocoaPods
         script: |
           cd ios && pod install
       - name: Build for App Store
         script: |
+          # 3. 마지막 최종 빌드
           xcode-project build --workspace ios/*.xcworkspace --scheme App
     publishing:
       app_store_connect:
