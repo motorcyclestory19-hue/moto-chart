@@ -1,7 +1,35 @@
-- name: Sync native dependencies
+workflows:
+  ios-build:
+    name: iOS Build
+    instance_type: mac_mini_m1
+    max_build_duration: 60
+    environment:
+      groups:
+        - app_store_credentials
+    scripts:
+      - name: Install dependencies
         script: |
-          # 1. 임시 폴더를 우리 프로젝트 안쪽 폴더로 지정하여 권한 문제를 피합니다.
+          npm install
+      - name: Build web assets
+        script: |
+          npm run build || ionic build
+      - name: Sync native dependencies
+        script: |
           export TMPDIR=$(pwd)/temp
           mkdir -p $TMPDIR
-          # 2. 노드로 Capacitor를 안전하게 실행합니다.
           node node_modules/@capacitor/cli/bin/capacitor sync ios
+      - name: Install CocoaPods
+        script: |
+          # 1. ios 폴더가 생성되었는지 확실히 체크합니다.
+          ls -R ios
+          # 2. Podfile이 있는 경로를 찾아서 설치를 진행합니다.
+          cd ios && pod install || (pod repo update && pod install)
+      - name: Build for App Store
+        script: |
+          xcodebuild -workspace ios/*.xcworkspace -scheme App -archivePath App.xcarchive archive
+    publishing:
+      app_store_connect:
+        api_key: $APP_STORE_CONNECT_PRIVATE_KEY
+        key_id: $APP_STORE_CONNECT_KEY_ID
+        issuer_id: $APP_STORE_CONNECT_ISSUER_ID
+        submit_to_app_store: true
