@@ -1,12 +1,25 @@
 workflows:
-  ionic-web-build:
-    name: Web SPA to Mobile
+  ios-build:
+    name: iOS Build
     instance_type: mac_mini_m1
     max_build_duration: 60
+    environment:
+      groups:
+        - app_store_credentials
     scripts:
-      - name: Zip web files
+      - name: Install dependencies
         script: |
-          # 현재 폴더의 모든 파일을 'moto-app.zip'으로 압축합니다.
-          zip -r moto-app.zip . -x "*.git*"
-    artifacts:
-      - moto-app.zip
+          npm install
+          npx cap sync ios
+      - name: CocoaPods
+        script: |
+          cd ios && pod install && cd ..
+      - name: Build for App Store
+        script: |
+          xcode-project build --workspace ios/App.xcworkspace --scheme App
+    publishing:
+      app_store_connect:
+        api_key: $APP_STORE_CONNECT_PRIVATE_KEY
+        key_id: $APP_STORE_CONNECT_KEY_ID
+        issuer_id: $APP_STORE_CONNECT_ISSUER_ID
+        submit_to_app_store: true
