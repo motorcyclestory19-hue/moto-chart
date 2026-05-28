@@ -4,24 +4,25 @@ workflows:
     instance_type: mac_mini_m1
     max_build_duration: 60
     environment:
-      groups:
-        - app_store_credentials
+      node: v20 # 가능한 최신 노드 버전을 명시하여 버전 충돌 방지
     scripts:
-      - name: Clean and Setup Environment
+      - name: Hard Reset Environment
         script: |
-          # 1. 기존의 충돌을 일으키는 환경 파일들을 모두 삭제합니다.
-          rm -rf node_modules package-lock.json ios/
-          # 2. 깨끗한 상태에서 필요한 도구만 설치합니다.
+          # 1. 꼬일 수 있는 모든 환경 파일 강제 삭제
+          rm -rf node_modules
+          rm -rf package-lock.json
+          # 2. 캐시까지 완전히 비워버립니다
+          npm cache clean --force
+      - name: Clean Install
+        script: |
+          # 3. 아주 깨끗한 상태에서 다시 설치
           npm install
-      - name: Build and Sync
+      - name: Sync and Build
         script: |
-          # 3. 빌드 명령어가 없으므로, 웹 파일들을 강제로 복사합니다.
-          # (이미 웹 파일이 생성되어 있다고 가정합니다)
+          # 4. 빌드 스크립트 없이, Capacitor만 깨끗하게 동기화
           npx cap sync ios
-      - name: Install and Build iOS
-        script: |
-          cd ios
-          pod install
+          # 5. 최종 빌드
+          cd ios && pod install
           xcodebuild -workspace *.xcworkspace -scheme App -archivePath App.xcarchive archive
     publishing:
       app_store_connect:
