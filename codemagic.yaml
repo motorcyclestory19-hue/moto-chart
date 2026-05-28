@@ -5,16 +5,18 @@ workflows:
     environment:
       node: 22
     scripts:
-      - name: Install Node Modules
-        script: npm install
+      - name: Install Dependencies
+        script: |
+          npm install
+          npm install -g @capacitor/cli
       - name: Build Web Assets
         script: npm run build
       - name: Add and Sync iOS
         script: |
           rm -rf ios
-          # npx 대신 npm으로 직접 모듈을 호출하여 권한 우회
-          ./node_modules/.bin/cap add ios
-          ./node_modules/.bin/cap sync ios
+          # npx나 파일 경로를 직접 호출하지 않고 글로벌 cli를 사용합니다
+          capacitor add ios
+          capacitor sync ios
       - name: Build iOS App
         script: |
           cd ios
