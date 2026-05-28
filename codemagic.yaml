@@ -16,24 +16,17 @@ workflows:
       - name: Setup iOS
         script: |
           rm -rf ios
-          # 모든 파일에 실행 권한 강제 부여 (126 에러 원천 차단)
-          chmod -R 777 .
-          
-          # npx를 쓰지 않고 전역 설치된 capacitor 명령어를 바로 호출
           capacitor add ios
           capacitor sync ios
       - name: Build iOS App
         script: |
-          # 파일 구조 확인
-          ls -R ios
-          
-          # xcworkspace 파일이 있는 곳을 찾아 빌드
-          WORKSPACE_PATH=$(find ios -name "*.xcworkspace" | head -n 1)
-          
-          if [ -f "$WORKSPACE_PATH" ]; then
-             echo "Found workspace at: $WORKSPACE_PATH"
-             xcodebuild -workspace "$WORKSPACE_PATH" -scheme App -archivePath App.xcarchive archive
+          cd ios/App
+          # 워크스페이스 대신 프로젝트 파일(.xcodeproj)을 사용하여 빌드합니다.
+          # SPM 방식에서는 -project 플래그를 사용해야 합니다.
+          if [ -f "App.xcodeproj" ]; then
+             echo "Found project at: App.xcodeproj"
+             xcodebuild -project App.xcodeproj -scheme App -destination 'generic/platform=iOS' -archivePath App.xcarchive archive
           else
-             echo "ERROR: xcworkspace not found!"
+             echo "ERROR: App.xcodeproj not found!"
              exit 1
           fi
