@@ -6,12 +6,14 @@ workflows:
       node: 20
     scripts:
       - name: Install Node Modules
-        script: npm install
+        script: |
+          chmod +x node_modules/.bin/* || true
+          npm install
       - name: Build Web Assets
         script: npm run build
       - name: Add and Sync iOS
         script: |
-          npx cap add ios
+          npx cap add ios || true
           npx cap sync ios
       - name: Build iOS App
         script: |
