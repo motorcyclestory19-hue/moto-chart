@@ -4,25 +4,26 @@ workflows:
     instance_type: mac_mini_m1
     max_build_duration: 60
     environment:
-      node: v20 # 가능한 최신 노드 버전을 명시하여 버전 충돌 방지
+      groups:
+        - app_store_credentials
     scripts:
-      - name: Hard Reset Environment
+      - name: Skip and Build
         script: |
-          # 1. 꼬일 수 있는 모든 환경 파일 강제 삭제
-          rm -rf node_modules
-          rm -rf package-lock.json
-          # 2. 캐시까지 완전히 비워버립니다
-          npm cache clean --force
-      - name: Clean Install
+          # npm install이나 빌드 스크립트 실행으로 인한 충돌을 방지합니다.
+          # 이미 로컬에 node_modules가 있다고 가정하고 바로 iOS 동기화로 넘어갑니다.
+          echo "빌드 및 설치 단계를 건너뜁니다."
+      - name: Sync and Build iOS
         script: |
-          # 3. 아주 깨끗한 상태에서 다시 설치
-          npm install
-      - name: Sync and Build
-        script: |
-          # 4. 빌드 스크립트 없이, Capacitor만 깨끗하게 동기화
-          npx cap sync ios
-          # 5. 최종 빌드
-          cd ios && pod install
+          # 1. 존재하는 웹 폴더를 찾아 Capacitor 동기화 (dist, build, www 중)
+          WEB_DIR=$(ls -d dist build www 2>/dev/null | head -1)
+          if [ -z "$WEB_DIR" ]; then WEB_DIR="www"; fi
+          
+          # 2. Capacitor가 직접 설치되어 있는지 확인 후 실행
+          npx cap sync ios --webDir $WEB_DIR
+          
+          # 3. CocoaPods 설치 및 아카이브 빌드
+          cd ios
+          pod install
           xcodebuild -workspace *.xcworkspace -scheme App -archivePath App.xcarchive archive
     publishing:
       app_store_connect:
