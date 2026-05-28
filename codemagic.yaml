@@ -13,31 +13,23 @@ workflows:
         script: |
           npm install
           npm install -g @capacitor/cli
-      - name: Force Create iOS Project
+      - name: Setup iOS
         script: |
           rm -rf ios
           capacitor add ios
           capacitor copy
           capacitor sync ios
-          # 파일 구조 확인용 (로그에 찍힙니다)
-          echo "Checking contents of ios directory:"
-          ls -R ios
+          cd ios
+          # CocoaPods가 명확하게 프로젝트 구조를 생성하게 합니다
+          pod install
       - name: Build iOS App
         script: |
-          # ios 폴더로 이동 후 실제 파일 확인
           cd ios
-          if [ -d "App" ]; then
-             echo "Found App directory"
-             # 워크스페이스가 있는지 다시 확인
-             if [ -f "App.xcworkspace" ]; then
-                pod install
-                xcodebuild -workspace App.xcworkspace -scheme App -archivePath App.xcarchive archive
-             else
-                echo "ERROR: App.xcworkspace missing!"
-                ls -F
-                exit 1
-             fi
+          # 이제 App.xcworkspace가 생성되었을 것입니다
+          if [ -f "App.xcworkspace" ]; then
+             xcodebuild -workspace App.xcworkspace -scheme App -archivePath App.xcarchive archive
           else
-             echo "ERROR: App directory missing!"
+             echo "ERROR: App.xcworkspace still missing. Listing files:"
+             ls -F
              exit 1
           fi
