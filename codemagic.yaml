@@ -9,13 +9,12 @@ workflows:
         script: |
           npm install
           npm install -g @capacitor/cli
-      - name: Build Web Assets
-        script: npm run build
       - name: Add and Sync iOS
         script: |
           rm -rf ios
-          # npx나 파일 경로를 직접 호출하지 않고 글로벌 cli를 사용합니다
           capacitor add ios
+          # 웹 파일(index.html 등)을 ios 프로젝트로 강제 복사
+          capacitor copy
           capacitor sync ios
       - name: Build iOS App
         script: |
