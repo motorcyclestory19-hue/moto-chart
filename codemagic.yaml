@@ -21,8 +21,17 @@ workflows:
           capacitor add ios
           capacitor copy
           capacitor sync ios
+          # iOS 프로젝트가 생성되었는지 강제 확인
+          if [ ! -d "ios/App" ]; then echo "iOS project creation failed!"; exit 1; fi
       - name: Build iOS App
         script: |
           cd ios
+          # CocoaPods 설치 및 초기화
           pod install
-          xcodebuild -workspace App.xcworkspace -scheme App -archivePath App.xcarchive archive
+          # 워크스페이스가 있는지 최종 확인 후 빌드
+          if [ -f "App.xcworkspace" ]; then
+            xcodebuild -workspace App.xcworkspace -scheme App -archivePath App.xcarchive archive
+          else
+            echo "App.xcworkspace not found!"
+            exit 1
+          fi
