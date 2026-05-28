@@ -12,18 +12,16 @@ workflows:
           npm install
       - name: Build web assets
         script: |
+          # 웹 파일 빌드 (보통 dist 폴더에 생성됨)
           npm run build || ionic build
       - name: Sync native dependencies
         script: |
-          export TMPDIR=$(pwd)/temp
-          mkdir -p $TMPDIR
-          node node_modules/@capacitor/cli/bin/capacitor sync ios
+          # 성공했던 노드 호출 방식을 사용하되, 웹 경로(--webDir)를 강제로 지정합니다
+          # dist 폴더가 생성되는 것을 기준으로 합니다
+          node node_modules/@capacitor/cli/bin/capacitor sync ios --webDir dist
       - name: Install CocoaPods
         script: |
-          # 1. ios 폴더가 생성되었는지 확실히 체크합니다.
-          ls -R ios
-          # 2. Podfile이 있는 경로를 찾아서 설치를 진행합니다.
-          cd ios && pod install || (pod repo update && pod install)
+          cd ios && pod install
       - name: Build for App Store
         script: |
           xcodebuild -workspace ios/*.xcworkspace -scheme App -archivePath App.xcarchive archive
