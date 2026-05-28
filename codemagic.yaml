@@ -12,13 +12,23 @@ workflows:
           npm install
       - name: Build web assets
         script: |
-          # 웹 파일 빌드 (보통 dist 폴더에 생성됨)
+          # 빌드를 수행하고, 결과물이 어디에 있는지 확인합니다.
           npm run build || ionic build
-      - name: Sync native dependencies
+          ls -F
+      - name: Fix Capacitor Config and Sync
         script: |
-          # 성공했던 노드 호출 방식을 사용하되, 웹 경로(--webDir)를 강제로 지정합니다
-          # dist 폴더가 생성되는 것을 기준으로 합니다
-          node node_modules/@capacitor/cli/bin/capacitor sync ios --webDir dist
+          # 1. 빌드 결과물이 dist인지, build인지, www인지 확인하고
+          # capacitor.config.json의 webDir 값을 강제로 해당 폴더로 수정합니다.
+          # 예: dist 폴더가 생성되었다면 webDir을 dist로 설정
+          if [ -d "dist" ]; then
+            npx cap config set webDir dist
+          elif [ -d "build" ]; then
+            npx cap config set webDir build
+          elif [ -d "www" ]; then
+            npx cap config set webDir www
+          fi
+          # 2. 설정이 완료된 후 동기화
+          node node_modules/@capacitor/cli/bin/capacitor sync ios
       - name: Install CocoaPods
         script: |
           cd ios && pod install
