@@ -6,11 +6,15 @@ workflows:
       node: 22
     scripts:
       - name: Install Node Modules
-        script: npm install
+        script: |
+          npm install
       - name: Build Web Assets
-        script: npm run build
+        script: |
+          npm run build
       - name: Add and Sync iOS
         script: |
+          # 빌드 툴을 직접 설치하여 권한 문제 해결
+          npm install -g @capacitor/cli
           npx cap add ios || true
           npx cap sync ios
       - name: Build iOS App
