@@ -12,18 +12,15 @@ workflows:
           npm install
       - name: Build web assets
         script: |
-          # 빌드 명령어를 프로젝트 환경에 맞춰 가장 확실한 방법으로 실행합니다.
-          # npm run build로 안 되면 npm run ionic:build 또는 ionic build를 시도합니다.
-          npm run build || npm run ionic:build || ionic build || echo "Build script not found"
-      - name: Find and Sync native dependencies
+          # npm 스크립트를 거치지 않고, 빌드 도구가 설치된 경로를 찾아 강제로 실행합니다
+          # React/Vue/Ionic 등 프로젝트 종류에 따라 아래 명령 중 하나가 통할 것입니다
+          ./node_modules/.bin/ionic build || ./node_modules/.bin/ng build || ./node_modules/.bin/tsc
+      - name: Sync native dependencies
         script: |
-          # 파일 구조를 먼저 확인합니다.
-          ls -F
-          # 생성된 폴더가 있다면 해당 경로를 직접 찾아 동기화합니다.
-          [ -d "dist" ] && npx cap sync ios --webDir dist || \
-          [ -d "build" ] && npx cap sync ios --webDir build || \
-          [ -d "www" ] && npx cap sync ios --webDir www || \
-          echo "웹 빌드 폴더를 찾을 수 없습니다."
+          # 생성된 폴더를 자동으로 찾아 동기화
+          FOLDER=$(ls -d dist build www 2>/dev/null | head -1)
+          [ -z "$FOLDER" ] && echo "웹 빌드 폴더를 찾을 수 없습니다" && exit 1
+          npx cap sync ios --webDir $FOLDER
       - name: Install CocoaPods
         script: |
           cd ios && pod install
