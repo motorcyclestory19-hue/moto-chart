@@ -9,28 +9,27 @@ workflows:
         script: |
           mkdir -p www
           cp -r index.html css js www/ || true
-      - name: Install Dependencies
-        script: |
-          npm install
-          npm install -g @capacitor/cli
       - name: Setup iOS
         script: |
           rm -rf ios
           capacitor add ios
           capacitor sync ios
-          # 강제로 이동해서 파일이 진짜 생성되었는지 확인
           cd ios/App
-          ls -F
-      - name: Build iOS App
-        script: |
-          cd ios/App
-          # Podfile 생성 및 설치
           pod init || true
           pod install
-          # 워크스페이스가 생성되었는지 확인 후 빌드
-          if [ -f "App.xcworkspace" ]; then
-             xcodebuild -workspace App.xcworkspace -scheme App -archivePath App.xcarchive archive
+      - name: Build iOS App
+        script: |
+          # 현재 위치를 출력해서 구조 확인
+          echo "Current directory: $(pwd)"
+          ls -R ios
+          
+          # xcworkspace 파일이 어디에 숨어있는지 찾아내서 빌드합니다
+          WORKSPACE_PATH=$(find . -name "*.xcworkspace" | head -n 1)
+          
+          if [ -f "$WORKSPACE_PATH" ]; then
+             echo "Found workspace at: $WORKSPACE_PATH"
+             xcodebuild -workspace "$WORKSPACE_PATH" -scheme App -archivePath App.xcarchive archive
           else
-             echo "ERROR: xcworkspace still not found in ios/App"
+             echo "ERROR: xcworkspace NOT FOUND anywhere!"
              exit 1
           fi
