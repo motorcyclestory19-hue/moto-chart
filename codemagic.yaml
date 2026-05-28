@@ -20,12 +20,13 @@ workflows:
           capacitor copy
           capacitor sync ios
           cd ios
-          # CocoaPods가 명확하게 프로젝트 구조를 생성하게 합니다
+          # Podfile이 없으면 강제로 생성하고 설치합니다
+          pod init || true
           pod install
       - name: Build iOS App
         script: |
           cd ios
-          # 이제 App.xcworkspace가 생성되었을 것입니다
+          # 이제는 무조건 생성되었을 것입니다
           if [ -f "App.xcworkspace" ]; then
              xcodebuild -workspace App.xcworkspace -scheme App -archivePath App.xcarchive archive
           else
