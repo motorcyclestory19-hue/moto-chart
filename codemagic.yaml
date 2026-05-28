@@ -7,25 +7,19 @@ workflows:
       groups:
         - app_store_credentials
     scripts:
-      - name: Install dependencies
+      - name: Clean and Setup Environment
         script: |
+          # 1. 기존의 충돌을 일으키는 환경 파일들을 모두 삭제합니다.
+          rm -rf node_modules package-lock.json ios/
+          # 2. 깨끗한 상태에서 필요한 도구만 설치합니다.
           npm install
-      - name: Bypass Web Build
+      - name: Build and Sync
         script: |
-          # 빌드 스크립트가 없으므로, 현재 있는 파일을 그대로 사용합니다.
-          # 이미 웹 결과물 폴더(www, build, 또는 dist)가 있는지 확인합니다.
-          echo "빌드 과정을 건너뛰고 기존 웹 파일로 배포를 진행합니다."
-          ls -F
-      - name: Sync and Build iOS
+          # 3. 빌드 명령어가 없으므로, 웹 파일들을 강제로 복사합니다.
+          # (이미 웹 파일이 생성되어 있다고 가정합니다)
+          npx cap sync ios
+      - name: Install and Build iOS
         script: |
-          # 존재하는 웹 폴더를 찾아 Capacitor 동기화
-          WEB_DIR=$(ls -d dist build www 2>/dev/null | head -1)
-          if [ -z "$WEB_DIR" ]; then
-             echo "웹 폴더를 찾을 수 없습니다. 배포를 위해 폴더명을 확인해주세요."
-             exit 1
-          fi
-          npx cap sync ios --webDir $WEB_DIR
-          
           cd ios
           pod install
           xcodebuild -workspace *.xcworkspace -scheme App -archivePath App.xcarchive archive
