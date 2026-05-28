@@ -11,10 +11,10 @@ workflows:
         script: npm run build
       - name: Add and Sync iOS
         script: |
-          # 기존 ios 폴더 제거 후 다시 추가 (충돌 방지)
           rm -rf ios
-          npx cap add ios
-          npx cap sync ios
+          # npx 대신 npm으로 직접 모듈을 호출하여 권한 우회
+          ./node_modules/.bin/cap add ios
+          ./node_modules/.bin/cap sync ios
       - name: Build iOS App
         script: |
           cd ios
