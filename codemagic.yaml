@@ -3,11 +3,12 @@ workflows:
     name: iOS Release
     max_build_duration: 60
     environment:
-      node: 22 # 기존의 20에서 22로 변경하세요!
+      node: 22
+      groups:
+        - apple_credentials # 이 그룹은 Codemagic 설정에서 따로 만드셔야 할 수도 있습니다.
     scripts:
       - name: Install Node Modules
-        script: |
-          npm install
+        script: npm install
       - name: Build Web Assets
         script: npm run build
       - name: Add and Sync iOS
@@ -18,4 +19,6 @@ workflows:
         script: |
           cd ios
           pod install
+          # 서명 설정을 적용하는 스크립트입니다.
+          xcode-project use-profiles
           xcodebuild -workspace App.xcworkspace -scheme App -archivePath App.xcarchive archive
