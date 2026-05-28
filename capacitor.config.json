@@ -1,5 +1,5 @@
 {
   "appId": "com.motorcycle.motochart",
   "appName": "Moto Chart",
-  "webDir": "."
+  "webDir": "www"
 }
