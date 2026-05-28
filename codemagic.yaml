@@ -8,30 +8,36 @@ workflows:
       - name: Prepare Web Assets
         script: |
           mkdir -p www
-          cp index.html www/
-          cp -r css www/ || true
-          cp -r js www/ || true
+          cp -r index.html css js www/ || true
       - name: Install Dependencies
         script: |
           npm install
           npm install -g @capacitor/cli
-      - name: Add and Sync iOS
+      - name: Force Create iOS Project
         script: |
           rm -rf ios
           capacitor add ios
           capacitor copy
           capacitor sync ios
-          # iOS 프로젝트가 생성되었는지 강제 확인
-          if [ ! -d "ios/App" ]; then echo "iOS project creation failed!"; exit 1; fi
+          # 파일 구조 확인용 (로그에 찍힙니다)
+          echo "Checking contents of ios directory:"
+          ls -R ios
       - name: Build iOS App
         script: |
+          # ios 폴더로 이동 후 실제 파일 확인
           cd ios
-          # CocoaPods 설치 및 초기화
-          pod install
-          # 워크스페이스가 있는지 최종 확인 후 빌드
-          if [ -f "App.xcworkspace" ]; then
-            xcodebuild -workspace App.xcworkspace -scheme App -archivePath App.xcarchive archive
+          if [ -d "App" ]; then
+             echo "Found App directory"
+             # 워크스페이스가 있는지 다시 확인
+             if [ -f "App.xcworkspace" ]; then
+                pod install
+                xcodebuild -workspace App.xcworkspace -scheme App -archivePath App.xcarchive archive
+             else
+                echo "ERROR: App.xcworkspace missing!"
+                ls -F
+                exit 1
+             fi
           else
-            echo "App.xcworkspace not found!"
-            exit 1
+             echo "ERROR: App directory missing!"
+             exit 1
           fi
