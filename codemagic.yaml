@@ -3,11 +3,10 @@ workflows:
     name: iOS Release
     max_build_duration: 60
     environment:
-      node: 20
+      node: 22 # 기존의 20에서 22로 변경하세요!
     scripts:
       - name: Install Node Modules
         script: |
-          chmod +x node_modules/.bin/* || true
           npm install
       - name: Build Web Assets
         script: npm run build
