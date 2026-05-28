@@ -5,6 +5,12 @@ workflows:
     environment:
       node: 22
     scripts:
+      - name: Prepare Web Assets
+        script: |
+          mkdir -p www
+          cp index.html www/
+          cp -r css www/ || true
+          cp -r js www/ || true
       - name: Install Dependencies
         script: |
           npm install
@@ -13,7 +19,6 @@ workflows:
         script: |
           rm -rf ios
           capacitor add ios
-          # 웹 파일(index.html 등)을 ios 프로젝트로 강제 복사
           capacitor copy
           capacitor sync ios
       - name: Build iOS App
