@@ -20,13 +20,16 @@ workflows:
           capacitor sync ios
       - name: Build iOS App
         script: |
+          # 파일이 있는 실제 경로로 이동
           cd ios/App
-          # 워크스페이스 대신 프로젝트 파일(.xcodeproj)을 사용하여 빌드합니다.
-          # SPM 방식에서는 -project 플래그를 사용해야 합니다.
-          if [ -f "App.xcodeproj" ]; then
-             echo "Found project at: App.xcodeproj"
+          
+          # 경로가 맞는지 확인을 위해 리스트 출력
+          ls -F
+          
+          # 하위 App 폴더 안에 프로젝트 파일이 있는지 확인하고 빌드
+          if [ -f "App.xcodeproj/project.pbxproj" ]; then
              xcodebuild -project App.xcodeproj -scheme App -destination 'generic/platform=iOS' -archivePath App.xcarchive archive
           else
-             echo "ERROR: App.xcodeproj not found!"
+             echo "ERROR: Project not found in ios/App/"
              exit 1
           fi
