@@ -4,32 +4,20 @@ workflows:
     max_build_duration: 60
     environment:
       node: 22
+      # 중요: 여기서 등록하신 그룹 이름을 불러와야 합니다!
+      groups:
+        - app_store_credentials 
     scripts:
-      - name: Prepare Web Assets
-        script: |
-          mkdir -p www
-          cp -r index.html css js www/ || true
-      - name: Install Dependencies
-        script: |
-          npm install
-          npm install -g @capacitor/cli
-      - name: Setup iOS
-        script: |
-          rm -rf ios
-          capacitor add ios
-          capacitor sync ios
+      # ... (기존 스크립트 내용 유지)
       - name: Build iOS App
         script: |
-          # 파일이 있는 실제 경로로 이동
           cd ios/App
-          
-          # 경로가 맞는지 확인을 위해 리스트 출력
-          ls -F
-          
-          # 하위 App 폴더 안에 프로젝트 파일이 있는지 확인하고 빌드
-          if [ -f "App.xcodeproj/project.pbxproj" ]; then
-             xcodebuild -project App.xcodeproj -scheme App -destination 'generic/platform=iOS' -archivePath App.xcarchive archive
-          else
-             echo "ERROR: Project not found in ios/App/"
-             exit 1
-          fi
+          # 서명이 자동으로 수행되도록 프로젝트 빌드
+          xcodebuild -project App.xcodeproj -scheme App -destination 'generic/platform=iOS' -archivePath App.xcarchive archive
+    # 퍼블리싱 섹션이 환경 변수를 참조합니다
+    publishing:
+      app_store_connect:
+        api_key:
+          key: $APP_STORE_CONNECT_PRIVATE_KEY
+          key_id: $APP_STORE_CONNECT_KEY_ID
+          issuer_id: $APP_STORE_CONNECT_ISSUER_ID
