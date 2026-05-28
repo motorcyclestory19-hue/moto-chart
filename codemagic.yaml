@@ -17,20 +17,20 @@ workflows:
         script: |
           rm -rf ios
           capacitor add ios
-          capacitor copy
           capacitor sync ios
-          cd ios
-          # Podfile이 없으면 강제로 생성하고 설치합니다
-          pod init || true
-          pod install
+          # 강제로 이동해서 파일이 진짜 생성되었는지 확인
+          cd ios/App
+          ls -F
       - name: Build iOS App
         script: |
-          cd ios
-          # 이제는 무조건 생성되었을 것입니다
+          cd ios/App
+          # Podfile 생성 및 설치
+          pod init || true
+          pod install
+          # 워크스페이스가 생성되었는지 확인 후 빌드
           if [ -f "App.xcworkspace" ]; then
              xcodebuild -workspace App.xcworkspace -scheme App -archivePath App.xcarchive archive
           else
-             echo "ERROR: App.xcworkspace still missing. Listing files:"
-             ls -F
+             echo "ERROR: xcworkspace still not found in ios/App"
              exit 1
           fi
