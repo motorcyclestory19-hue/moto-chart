@@ -1,22 +1,20 @@
 workflows:
-  ios-build:
-    name: iOS Build
-    instance_type: mac_mini_m1
+  ios-release:
+    name: iOS Release
     max_build_duration: 60
     environment:
-      groups:
-        - app_store_credentials
+      node: 20
     scripts:
+      - name: Install Node Modules
+        script: npm install
+      - name: Build Web Assets
+        script: npm run build
+      - name: Add and Sync iOS
+        script: |
+          npx cap add ios
+          npx cap sync ios
       - name: Build iOS App
         script: |
           cd ios
-          # 1. 의존성 설치 (CocoaPods)
           pod install
-          # 2. 빌드 실행
-          xcodebuild -workspace *.xcworkspace -scheme App -archivePath App.xcarchive archive
-    publishing:
-      app_store_connect:
-        api_key: $APP_STORE_CONNECT_PRIVATE_KEY
-        key_id: $APP_STORE_CONNECT_KEY_ID
-        issuer_id: $APP_STORE_CONNECT_ISSUER_ID
-        submit_to_app_store: true
+          xcodebuild -workspace App.xcworkspace -scheme App -archivePath App.xcarchive archive
