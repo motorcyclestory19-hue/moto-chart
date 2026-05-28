@@ -12,26 +12,28 @@ workflows:
       - name: Install Dependencies
         script: |
           npm install
-          # 전역 설치 대신 로컬 bin을 활용합니다
+          npm install -g @capacitor/cli
       - name: Setup iOS
         script: |
           rm -rf ios
-          # npx를 사용하여 설치된 패키지를 정확히 호출
-          npx cap add ios
-          npx cap sync ios
+          # 모든 파일에 실행 권한 강제 부여 (126 에러 원천 차단)
+          chmod -R 777 .
+          
+          # npx를 쓰지 않고 전역 설치된 capacitor 명령어를 바로 호출
+          capacitor add ios
+          capacitor sync ios
       - name: Build iOS App
         script: |
-          # 파일 구조가 맞는지 한 번 더 확인
+          # 파일 구조 확인
           ls -R ios
           
-          # xcworkspace 파일이 있는 곳을 자동으로 찾아 빌드
+          # xcworkspace 파일이 있는 곳을 찾아 빌드
           WORKSPACE_PATH=$(find ios -name "*.xcworkspace" | head -n 1)
           
           if [ -f "$WORKSPACE_PATH" ]; then
              echo "Found workspace at: $WORKSPACE_PATH"
              xcodebuild -workspace "$WORKSPACE_PATH" -scheme App -archivePath App.xcarchive archive
           else
-             echo "ERROR: xcworkspace not found! Check directory structure."
-             ls -R ios
+             echo "ERROR: xcworkspace not found!"
              exit 1
           fi
