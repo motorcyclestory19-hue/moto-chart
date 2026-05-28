@@ -7,23 +7,12 @@ workflows:
       groups:
         - app_store_credentials
     scripts:
-      - name: Skip and Build
+      - name: Build iOS App
         script: |
-          # npm install이나 빌드 스크립트 실행으로 인한 충돌을 방지합니다.
-          # 이미 로컬에 node_modules가 있다고 가정하고 바로 iOS 동기화로 넘어갑니다.
-          echo "빌드 및 설치 단계를 건너뜁니다."
-      - name: Sync and Build iOS
-        script: |
-          # 1. 존재하는 웹 폴더를 찾아 Capacitor 동기화 (dist, build, www 중)
-          WEB_DIR=$(ls -d dist build www 2>/dev/null | head -1)
-          if [ -z "$WEB_DIR" ]; then WEB_DIR="www"; fi
-          
-          # 2. Capacitor가 직접 설치되어 있는지 확인 후 실행
-          npx cap sync ios --webDir $WEB_DIR
-          
-          # 3. CocoaPods 설치 및 아카이브 빌드
           cd ios
+          # 1. 의존성 설치 (CocoaPods)
           pod install
+          # 2. 빌드 실행
           xcodebuild -workspace *.xcworkspace -scheme App -archivePath App.xcarchive archive
     publishing:
       app_store_connect:
