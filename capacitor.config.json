@@ -1,5 +1,5 @@
 {
-  "appId": "com.example.app",
-  "appName": "Bashnpm install @capacitor/androidnpx cap add android",
-  "webDir": "Bashnpm install @capacitor/android"
+  "appId": "com.motorcycle.motochart",
+  "appName": "Moto Chart",
+  "webDir": "www"
 }
